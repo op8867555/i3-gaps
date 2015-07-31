@@ -53,15 +53,16 @@ void render_con(Con *con, bool render_fullscreen, bool already_inset) {
     if (con->type == CT_WORKSPACE) {
         gaps_t gaps = calculate_effective_gaps(con);
         Rect inset = {
-            gaps.outer,
-            gaps.outer,
-            -2 * gaps.outer,
-            -2 * gaps.outer
+            gaps.outer.left,
+            gaps.outer.top,
+            -gaps.outer.left + -gaps.outer.right,
+            -gaps.outer.top + -gaps.outer.bottom
         };
+
         con->rect = rect_add(con->rect, inset);
         params.rect = rect_add(params.rect, inset);
-        params.x += gaps.outer;
-        params.y += gaps.outer;
+        params.x += inset.x;
+        params.y += inset.y;
     }
 
     bool should_inset = should_inset_con(con, params.children);

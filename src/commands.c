@@ -2201,10 +2201,10 @@ void cmd_debuglog(I3_CMD, const char *argument) {
 }
 
 /**
- * Implementation of 'gaps inner|outer current|all set|plus|minus <px>'
+ * Implementation of 'gaps inner|outer current|all [top|left|bottom|right|horizontal|vertical] set|plus|minus <px>'
  *
  */
-void cmd_gaps(I3_CMD, const char *type, const char *scope, const char *mode, const char *value) {
+void cmd_gaps(I3_CMD, const char *type, const char *scope, const char *side, const char *mode, const char *value) {
 #define CMD_GAPS(type, other)                                      \
     int pixels = logical_px(atoi(value));                          \
     Con *workspace = con_get_workspace(focused);                   \
@@ -2250,7 +2250,18 @@ void cmd_gaps(I3_CMD, const char *type, const char *scope, const char *mode, con
     if (!strcmp(type, "inner")) {
         CMD_GAPS(inner, outer);
     } else if (!strcmp(type, "outer")) {
-        CMD_GAPS(outer, inner);
+        if (side == NULL || strcasecmp(side, "top") == 0 || strcasecmp(side, "vertical") == 0) {
+            CMD_GAPS(outer.top, inner);
+        }
+        if (side == NULL || strcasecmp(side, "left") == 0 || strcasecmp(side, "horizontal") == 0) {
+            CMD_GAPS(outer.left, inner);
+        }
+        if (side == NULL || strcasecmp(side, "bottom") == 0 || strcasecmp(side, "vertical") == 0) {
+            CMD_GAPS(outer.bottom, inner);
+        }
+        if (side == NULL || strcasecmp(side, "right") == 0 || strcasecmp(side, "horizontal") == 0) {
+            CMD_GAPS(outer.right, inner);
+        }
     } else {
         ELOG("Invalid type %s when changing gaps", type);
         ysuccess(false);
