@@ -50,16 +50,28 @@ void render_con(Con *con, bool render_fullscreen, bool already_inset) {
          (render_fullscreen ? "fullscreen " : ""), con, con->name, con->layout,
          params.children);
 
+    if (con->type == CT_WORKSPACE) {
+        gaps_t gaps = calculate_effective_gaps(con);
+        Rect inset = {
+            gaps.outer,
+            gaps.outer,
+            -2 * gaps.outer,
+            -2 * gaps.outer
+        };
+        con->rect = rect_add(con->rect, inset);
+        params.rect = rect_add(params.rect, inset);
+        params.x += gaps.outer;
+        params.y += gaps.outer;
+    }
+
     bool should_inset = should_inset_con(con, params.children);
     if (!already_inset && should_inset) {
         gaps_t gaps = calculate_effective_gaps(con);
         Rect inset = (Rect){
-            has_adjacent_container(con, D_LEFT) ? gaps.inner : gaps.outer,
-            has_adjacent_container(con, D_UP) ? gaps.inner : gaps.outer,
-            has_adjacent_container(con, D_RIGHT) ? -gaps.inner : -gaps.outer,
-            has_adjacent_container(con, D_DOWN) ? -gaps.inner : -gaps.outer};
-        inset.width -= inset.x;
-        inset.height -= inset.y;
+            has_adjacent_container(con, D_LEFT) ? gaps.inner : 0,
+            has_adjacent_container(con, D_UP) ? gaps.inner : 0,
+            has_adjacent_container(con, D_RIGHT) ? -2 * gaps.inner : 0,
+            has_adjacent_container(con, D_DOWN) ? -2 * gaps.inner : 0};
 
         if (!render_fullscreen) {
             params.rect = rect_add(params.rect, inset);
