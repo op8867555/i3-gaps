@@ -22,7 +22,6 @@ static int incomplete;
 static Con *json_node;
 static Con *to_focus;
 static bool parsing_gaps;
-static bool parsing_margin;
 static bool parsing_swallows;
 static bool parsing_rect;
 static bool parsing_deco_rect;
@@ -57,7 +56,7 @@ static int json_start_map(void *ctx) {
         TAILQ_INSERT_TAIL(&(json_node->swallow_head), current_swallow, matches);
         swallow_is_empty = true;
     } else {
-        if (!parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry && !parsing_gaps && !parsing_margin) {
+        if (!parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry && !parsing_gaps) {
             if (last_key && strcasecmp(last_key, "floating_nodes") == 0) {
                 DLOG("New floating_node\n");
                 Con *ws = con_get_workspace(json_node);
@@ -81,7 +80,7 @@ static int json_start_map(void *ctx) {
 
 static int json_end_map(void *ctx) {
     LOG("end of map\n");
-    if (!parsing_swallows && !parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry && !parsing_gaps && !parsing_margin) {
+    if (!parsing_swallows && !parsing_rect && !parsing_deco_rect && !parsing_window_rect && !parsing_geometry && !parsing_gaps) {
         /* Set a few default values to simplify manually crafted layout files. */
         if (json_node->layout == L_DEFAULT) {
             DLOG("Setting layout = L_SPLITH\n");
@@ -184,7 +183,6 @@ static int json_end_map(void *ctx) {
     }
 
     parsing_gaps = false;
-    parsing_margin = false;
     parsing_rect = false;
     parsing_deco_rect = false;
     parsing_window_rect = false;
@@ -240,9 +238,6 @@ static int json_key(void *ctx, const unsigned char *val, size_t len) {
 
     if (strcasecmp(last_key, "gaps") == 0)
         parsing_gaps = true;
-
-    if (strcasecmp(last_key, "outer") == 0)
-        parsing_margin = true;
 
     if (strcasecmp(last_key, "rect") == 0)
         parsing_rect = true;
@@ -494,22 +489,17 @@ static int json_int(void *ctx, long long val) {
             swallow_is_empty = false;
         }
     }
-
     if (parsing_gaps) {
-        if (parsing_margin) {
-            if (strcasecmp(last_key, "top") == 0)
-                json_node->gaps.outer.top = val;
-            else if (strcasecmp(last_key, "left") == 0)
-                json_node->gaps.outer.left = val;
-            else if (strcasecmp(last_key, "bottom") == 0)
-                json_node->gaps.outer.bottom = val;
-            else if (strcasecmp(last_key, "right") == 0)
-                json_node->gaps.outer.right = val;
-        } else if (strcasecmp(last_key, "inner") == 0) {
+        if (strcasecmp(last_key, "inner") == 0)
             json_node->gaps.inner = val;
-        } else if (strcasecmp(last_key, "outer") == 0) {
-            json_node->gaps.outer = (margin_t) {val, val, val, val};
-        }
+        else if (strcasecmp(last_key, "outer.left") == 0)
+            json_node->gaps.outer.left = val;
+        else if (strcasecmp(last_key, "outer.top") == 0)
+            json_node->gaps.outer.top = val;
+        else if (strcasecmp(last_key, "outer.right") == 0)
+            json_node->gaps.outer.right = val;
+        else if (strcasecmp(last_key, "outer.bottom") == 0)
+            json_node->gaps.outer.bottom = val;
     }
 
     return 1;
@@ -649,7 +639,6 @@ void tree_append_json(Con *con, const char *buf, const size_t len, char **errorm
     to_focus = NULL;
     parsing_gaps = false;
     incomplete = 0;
-    parsing_margin = false;
     parsing_swallows = false;
     parsing_rect = false;
     parsing_deco_rect = false;
